@@ -21,6 +21,7 @@ steps:
       app_name="configuration"
       app_version="dev"
       rulepack_gate=""
+      issue_friotiy
       
       # Defini os cabeçalhos
       headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
@@ -54,3 +55,5 @@ steps:
           exit 1
       fi
       echo "$response_body" | jq '.'
+
+      # Consulta no banco de dados para cada issue encontrada
