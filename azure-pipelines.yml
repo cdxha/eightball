@@ -17,3 +17,29 @@ steps:
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
   displayName: 'Run a multi-line script'
+
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Defini as variáveis
+      fortify_url="https://lab.devsecops.com:8443/ssc/api/v1"
+      fortify_token="YWE4ZDgwM2ItNDQ0Yy00ZDkwLWFkOTItZDc3YmEzM2IyYzk4"
+      app_name="javaAnnotations"
+      app_version="dev"
+      rulepack_gate=""
+      # Defini os cabeçalhos
+      headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
+      
+      # Fazendo a requisição HTTP no endpoint que lista as aplicações
+      
+      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?fields=id&start=0&limit=0&q=name%3${app_name}&fulltextsearch=false" "${headers[@]}")
+      status_code=$(echo "$response" | tail -n1)
+      response_body=$(echo "$response" | sed '$d')
+      
+      if [ "$status_code" -ne 200 ]; then
+          echo "Erro na request /projects?fields=id&start=0&limit=0&q=name%3${app_name}&fulltextsearch=false return code $status_code"
+          exit 1
+      fi
+      
+      echo "$response_body" | jq '.'
