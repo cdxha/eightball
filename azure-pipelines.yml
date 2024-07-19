@@ -24,12 +24,12 @@ steps:
       # Defini os cabeçalhos
       headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
       # Fazendo a requisição HTTP no endpoint que lista as aplicações
-      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3Aconfiguration&fulltextsearch=false" "${headers[@]}")
+      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3${app_name}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
       response_body=$(echo "$response" | sed '$d')
       
       if [ "$status_code" -ne 200 ]; then
-          echo "Erro na request /projects?start=0&limit=200&q=name%3Aconfiguration&fulltextsearch=false return code $status_code"
+          echo "Erro na request /projects?start=0&limit=200&q=name%3${app_name}&fulltextsearch=false return code $status_code"
           exit 1
       fi
       
