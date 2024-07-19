@@ -25,14 +25,12 @@ steps:
       # Defini as variáveis
       fortify_url="https://lab.devsecops.com:8443/ssc/api/v1"
       fortify_token="YWE4ZDgwM2ItNDQ0Yy00ZDkwLWFkOTItZDc3YmEzM2IyYzk4"
-      app_name="javaAnnotations"
+      app_name="configuration"
       app_version="dev"
       rulepack_gate=""
       # Defini os cabeçalhos
       headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
-      
       # Fazendo a requisição HTTP no endpoint que lista as aplicações
-      
       response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?&start=0&limit=0&q=name%3${app_name}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
       response_body=$(echo "$response" | sed '$d')
