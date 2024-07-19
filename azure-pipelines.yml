@@ -36,7 +36,7 @@ steps:
       app_id=$(echo "$response_body" | jq '.data[0].id')
       
       # Fazendo a requisição HTTP no endpoint que lista as versões de aplicações
-      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0" "${headers[@]}")
+      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0&q=name%3A${app_version}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
       response_body=$(echo "$response" | sed '$d')
       if [ "$status_code" -ne 200 ]; then
