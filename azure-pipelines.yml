@@ -21,16 +21,27 @@ steps:
       app_name="configuration"
       app_version="dev"
       rulepack_gate=""
+      
       # Defini os cabeçalhos
       headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
+      
       # Fazendo a requisição HTTP no endpoint que lista as aplicações
-      response=$(curl -v -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3A${app_name}&fulltextsearch=false" "${headers[@]}")
+      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3A${app_name}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
       response_body=$(echo "$response" | sed '$d')
-      
       if [ "$status_code" -ne 200 ]; then
           echo "Erro na request /projects?start=0&limit=200&q=name%3${app_name}&fulltextsearch=false return code $status_code"
           exit 1
       fi
+      app_id=$(echo "$response_body" | jq '.data[0].id')
       
+      # Fazendo a requisição HTTP no endpoint que lista as versões de aplicações
+      response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0" "${headers[@]}")
+      status_code=$(echo "$response" | tail -n1)
+      response_body=$(echo "$response" | sed '$d')
+      if [ "$status_code" -ne 200 ]; then
+          echo "Erro na request /projects/${app_id}/versions?start=0&limit=0 return code $status_code"
+          exit 1
+      fi
       echo "$response_body" | jq '.'
+
