@@ -58,15 +58,13 @@ steps:
 
       # Consulta no banco de dados para cada issue encontrada
 
-      #!/bin/bash
-
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
       DB_PASS="t3cn0l0gi4!"
       DB_NAME="sscdb"
 
-      # Processa o JSON e extrai os primaryRuleGuid
+      # Processa o JSON e extrai os primaryRuleGuids
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
       for guid in $primaryRuleGuids; do
@@ -76,7 +74,7 @@ steps:
         rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
           SELECT rulepack_id
           FROM ruledescription
-          WHERE guid = '$GUID';
+          WHERE guid = '$guid';
         " -s"," -W -h-1)
 
         # Remover possíveis linhas em branco da saída
@@ -90,4 +88,6 @@ steps:
           # Aqui você pode colocar outra consulta ou qualquer outra lógica
           echo "Rulepack ID: $rulepack_id"
         done
-      done      
+      done
+
+           
