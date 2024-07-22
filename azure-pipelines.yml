@@ -68,9 +68,10 @@ steps:
         WHERE guid = '$guid'
       " -s"," -W | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
 
-      # Percorre o array de rulepack_ids
-      for id in "${rulepack_ids[@]}"
-      do
-        echo "ID do rulepack: $id"
-        # Faça outras operações necessárias com cada ID aqui
+        # Percorre o array de rulepack_ids
+        for id in "${rulepack_ids[@]}"
+        do
+          echo "ID do rulepack: $id"
+          # Faça outras operações necessárias com cada ID aqui
+        done
       done
