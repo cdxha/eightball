@@ -71,7 +71,7 @@ steps:
       # Remove possíveis vírgulas extras e linhas em branco da saída
       rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
       
-      echo $rulepack_id
+      echo $rulepack_ids
 
       # Verifica se a variável não está vazia antes de converter em array
       if [ -n "$rulepack_ids" ]; then
