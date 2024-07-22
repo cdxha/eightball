@@ -54,7 +54,7 @@ steps:
           echo "Erro na request /projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false return code $status_code"
           exit 1
       fi
-      echo "$response_body" | jq '.'
+      # echo "$response_body" | jq '.'
 
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
@@ -84,6 +84,7 @@ steps:
         # Itera sobre cada rulepack_id, ignorando entradas vazias
         for rulepack_id in "${rulepack_array[@]}"; do
           if [[ -n "$rulepack_id" ]]; then
+            
             # Consulta ao banco de dados para obter os rulepack_ids e suas versões
             rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
               SELECT name, versionNumber, rulepackType, locale, progLanguage
