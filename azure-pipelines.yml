@@ -70,3 +70,18 @@ steps:
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
       echo $primaryRuleGuids
+
+      for guid in $primaryRuleGuids; do
+        echo "Consulta para Issue primaryRuleGuid: $guid"
+
+        # Consulta 01: ruledescription
+        ruledescription_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+          SELECT id, guid, rulepack_id
+          FROM ruledescription
+          WHERE guid = '$guid';
+        " -s"," -W)
+
+        echo "Resultado da Consulta 01:"
+        echo "$ruledescription_result"
+        
+      done
