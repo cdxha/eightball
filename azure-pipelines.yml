@@ -61,24 +61,23 @@ steps:
       for guid in $primaryRuleGuids; do
         echo "Consulta para Issue primaryRuleGuid: $guid"
         # Consulta ao banco de dados para obter os rulepack_id
-        
-        # Executa a consulta SQL e armazena os IDs dos rulepacks em uma variável
-        rulepack_ids=$(sqlcmd -S "$DB_SERVER" -U "$DB_USER" -P "$DB_PASS" -d "$DB_NAME" -Q "
-          SELECT rulepack_id
-          FROM ruledescription
-          WHERE guid = '$guid'
-        " -s"," -W | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
+      # Executa a consulta SQL e armazena os IDs dos rulepacks em uma variável
+      rulepack_ids=$(sqlcmd -S "$DB_SERVER" -U "$DB_USER" -P "$DB_PASS" -d "$DB_NAME" -Q "
+        SELECT rulepack_id
+        FROM ruledescription
+        WHERE guid = '$guid'
+      " -s"," -W | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
 
-        # Remove possíveis vírgulas extras e linhas em branco da saída
-        rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
+      # Remove possíveis vírgulas extras e linhas em branco da saída
+      rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
 
-        # Verifica se a variável não está vazia antes de converter em array
-        if [ -n "$rulepack_ids" ]; then
-          # Converte a lista de IDs em um array Bash
-          IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
-        else
-          echo "Nenhum ID de rulepack encontrado para o guid $guid."
-        fi
+      # Verifica se a variável não está vazia antes de converter em array
+      if [ -n "$rulepack_ids" ]; then
+        # Converte a lista de IDs em um array Bash
+        IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
+      else
+        echo "Nenhum ID de rulepack encontrado para o guid $guid."
+      fi
 
         
         # Itera sobre cada rulepack_id, ignorando entradas vazias
@@ -86,7 +85,7 @@ steps:
           if [[ -n "$rulepack_id" ]]; then
             
             # Consulta ao banco de dados para obter os rulepack_ids e suas versões
-            rulepack_result=$(sqlcmd -S "$DB_SERVER" -U "$DB_USER" -P "$DB_PASS" -d "$DB_NAME' -Q "
+            rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
               SELECT name, versionNumber, rulepackType, locale, progLanguage
               FROM rulepack
               WHERE id = $rulepack_id;
