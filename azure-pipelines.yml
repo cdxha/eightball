@@ -72,19 +72,21 @@ steps:
       for guid in $primaryRuleGuids; do
         echo "Consulta para Issue primaryRuleGuid: $guid"
 
-        # Consulta 01: ruledescription
-        ruledescription_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+                # Consulta ao banco de dados para obter os rulepack_id
+        rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
           SELECT rulepack_id
           FROM ruledescription
-          WHERE guid = '$guid';
-        " -s"," -W)
+          WHERE guid = '$GUID';
+        " -s"," -W -h-1)
 
-        echo "Resultado da consulta na tabela ruledescription:"
-        echo "$ruledescription_result"
-        
-        ruledescription_result=$(echo "$ruledescription_result" | sed '/^$/d')
+        # Remover possíveis linhas em branco da saída
+        rulepack_ids=$(echo "$rulepack_ids" | sed '/^$/d')
 
-        echo "Resultado da consulta na tabela ruledescription sanitizada:"
-        echo "$ruledescription_result"
+        # Converte a lista de IDs em um array Bash
+        IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
 
-      done
+        # Itera sobre cada rulepack_id
+        for rulepack_id in "${rulepack_array[@]}"; do
+          # Aqui você pode colocar outra consulta ou qualquer outra lógica
+          echo "Rulepack ID: $rulepack_id"
+        done
