@@ -56,10 +56,12 @@ steps:
       fi
       # echo "$response_body" | jq '.'
 
+      #!/bin/bash
+
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
-      DB_PASS="t3cn0l0gi4!"
+      DB_PASS="t3cn0l0gi4adadadf!"
       DB_NAME="sscdb"
 
       # Processa o JSON e extrai os primaryRuleGuids
@@ -91,9 +93,21 @@ steps:
               FROM rulepack
               WHERE id = '$rulepack_id';
             " -s"," -W)
+
+            # Verifica se a consulta retornou dados
+            if [[ "$rulepack_result" != *"(0 rows affected)"* ]]; then
+              # Remove o cabeçalho da saída
+              rulepack_result=$(echo "$rulepack_result" | sed -n '/^----/d')
+
+              # Imprime o resultado se houver dados
+              if [[ -n "$rulepack_result" ]]; then
+                echo "$rulepack_result"
+              fi
+            fi
           fi
         done
       done
+
 
 
            
