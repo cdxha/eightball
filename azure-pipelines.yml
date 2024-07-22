@@ -56,10 +56,6 @@ steps:
       fi
       echo "$response_body" | jq '.'
 
-      # Consulta no banco de dados para cada issue encontrada
-
-      #!/bin/bash
-
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
@@ -88,8 +84,13 @@ steps:
         # Itera sobre cada rulepack_id, ignorando entradas vazias
         for rulepack_id in "${rulepack_array[@]}"; do
           if [[ -n "$rulepack_id" ]]; then
-            # Aqui você pode colocar outra consulta ou qualquer outra lógica
-            echo "Rulepack ID: $rulepack_id"
+            # Consulta ao banco de dados para obter os rulepack_ids e suas versões
+            rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+              SELECT id, name, description, versionNumber, progLanguage, rulepackType, locale
+              FROM rulepack
+              WHERE id = '$rulepack_id';
+            " -s"," -W)
+            echo "$rulepack_result"           
           fi
         done
       done
