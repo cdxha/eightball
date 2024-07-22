@@ -82,12 +82,10 @@ steps:
                   FROM rulepack
                   WHERE id = $rulepack_id; " -s"," -W | sed '1d' | grep -v '^$')
 
-              # Verifica se houve resultados da consulta
-              if [ -n "$rulepack_result" ]; then
-                  echo "$rulepack_result"
+              if [ "$rulepack_result" != "----,-------------,------------,------,------------" ]; then
+                echo "Resultado filtrado para rulepack_id: $rulepack_id"
               else
-                  echo "Nenhum resultado encontrado para rulepack_id: $rulepack_id"
+                echo "$rulepack_result"
               fi
-              echo "$rulepack_result"
           done
       done
