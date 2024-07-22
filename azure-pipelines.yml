@@ -75,10 +75,10 @@ steps:
           if [[ -n "$rulepack_id" ]]; then
             
             # Consulta ao banco de dados para obter os rulepack_ids e suas versões
-            rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+            rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -v rulepack_id="$rulepack_id" -Q "
               SELECT name, versionNumber, rulepackType, locale, progLanguage
               FROM rulepack
-              WHERE id = $rulepack_id;
+              WHERE id = $(rulepack_id);
             " -s"," -W)
               
             echo "$rulepack_result"
