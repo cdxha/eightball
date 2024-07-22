@@ -83,7 +83,6 @@ steps:
                   WHERE id = $rulepack_id; " -s"," -W | sed '1d; 2d' | grep -v '^$')
 
               if [ "$rulepack_result" == "----,-------------,------------,------,------------" ]; then
-                echo "Resultado filtrado para rulepack_id: $rulepack_id"
               else
                 echo "$rulepack_result"
               fi
