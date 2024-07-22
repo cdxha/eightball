@@ -91,13 +91,6 @@ steps:
               FROM rulepack
               WHERE id = '$rulepack_id';
             " -s"," -W)
-
-            # Verifica se a consulta retornou o valor específico
-            if [[ "$rulepack_result" == "----,-------------,------------,------,------------" ]]; then
-              echo "nenhuma rulepack para esse id: $rulepack_id"
-            else
-              echo "$rulepack_result"
-            fi
           fi
         done
       done
