@@ -81,7 +81,7 @@ steps:
               WHERE id = '$rulepack_id';
             " -s"," -W)
               
-              cho "$rulepack_result"
+            echo "$rulepack_result"
           fi
         done
       done
