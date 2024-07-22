@@ -77,10 +77,17 @@ steps:
           do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
               rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+                  SET NOCOUNT ON;
                   SELECT name, versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
-                  WHERE id = $rulepack_id; " -s"," -W)
+                  WHERE id = $rulepack_id; " -s"," -W | sed '1d' | grep -v '^$')
 
+              # Verifica se houve resultados da consulta
+              if [ -n "$rulepack_result" ]; then
+                  echo "$rulepack_result"
+              else
+                  echo "Nenhum resultado encontrado para rulepack_id: $rulepack_id"
+              fi
               echo "$rulepack_result"
           done
       done
