@@ -81,10 +81,5 @@ steps:
                   SELECT name, versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
                   WHERE id = $rulepack_id; " -s"," -W | sed '1d; 2d' | grep -v '^$')
-
-              if [ "$rulepack_result" == "----,-------------,------------,------,------------" ]; then
-              else
-                echo "$rulepack_result"
-              fi
           done
       done
