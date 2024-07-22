@@ -51,6 +51,7 @@ steps:
           exit 1
       fi
       # echo "$response_body" | jq '.'
+      
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
@@ -73,32 +74,5 @@ steps:
       
       echo $rulepack_ids
 
-      # Verifica se a variável não está vazia antes de converter em array
-      if [ -n "$rulepack_ids" ]; then
-        # Converte a lista de IDs em um array Bash
-        IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
-      else
-        echo "Nenhum ID de rulepack encontrado para o guid $guid."
-      fi
-
-        
-        # Itera sobre cada rulepack_id, ignorando entradas vazias
-        for rulepack_id in "${rulepack_array[@]}"; do
-          if [[ -n "$rulepack_id" ]]; then
-            
-            # Consulta ao banco de dados para obter os rulepack_ids e suas versões
-            rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
-              SELECT name, versionNumber, rulepackType, locale, progLanguage
-              FROM rulepack
-              WHERE id = $rulepack_id;
-            " -s"," -W)
-
-            # Verifica se a consulta retornou o valor específico
-            if [[ "$rulepack_result" == "----,-------------,------------,------,------------" ]]; then
-              echo "nenhuma rulepack para esse id: $rulepack_id"
-            else
-              echo "$rulepack_result"
-            fi
-          fi
-        done
+      
       done
