@@ -72,7 +72,7 @@ steps:
       for guid in $primaryRuleGuids; do
         echo "Consulta para Issue primaryRuleGuid: $guid"
 
-                # Consulta ao banco de dados para obter os rulepack_id
+        # Consulta ao banco de dados para obter os rulepack_id
         rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
           SELECT rulepack_id
           FROM ruledescription
@@ -90,3 +90,4 @@ steps:
           # Aqui você pode colocar outra consulta ou qualquer outra lógica
           echo "Rulepack ID: $rulepack_id"
         done
+      done      
