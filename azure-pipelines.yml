@@ -65,7 +65,7 @@ steps:
           SELECT rulepack_id
           FROM ruledescription
           WHERE guid = '$guid'
-        " -s"," -W -h-1 | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
+        " -s"," -W | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
         # Remover possíveis linhas em branco da saída e vírgulas adicionais
         rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
         # Converte a lista de IDs em um array Bash
