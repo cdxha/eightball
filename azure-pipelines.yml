@@ -58,6 +58,8 @@ steps:
 
       # Consulta no banco de dados para cada issue encontrada
 
+      #!/bin/bash
+
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
@@ -74,11 +76,11 @@ steps:
         rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
           SELECT rulepack_id
           FROM ruledescription
-          WHERE guid = '$guid';
-        " -s"," -W -h-1)
+          WHERE guid = '$guid'
+        " -s"," -W -h-1 | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
 
         # Remover possíveis linhas em branco da saída
-        rulepack_ids=$(echo "$rulepack_ids" | sed '/^$/d')
+        rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//')
 
         # Converte a lista de IDs em um array Bash
         IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
@@ -89,5 +91,6 @@ steps:
           echo "Rulepack ID: $rulepack_id"
         done
       done
+
 
            
