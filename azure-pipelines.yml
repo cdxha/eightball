@@ -69,8 +69,11 @@ steps:
       # Processa o JSON e extrai os primaryRuleGuids
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
-      for guid in $primaryRuleGuids; do
-        echo "Consulta para Issue primaryRuleGuid: $guid"
+      # Processa o JSON e extrai os issueInstanceIds
+      issueInstanceIds=$(echo "$response_body" | jq -r '.data[].issueInstanceId')
+
+      for guid in $issueInstanceIds; do
+        echo "Consulta para Issue : $guid"
 
         # Consulta ao banco de dados para obter os rulepack_id
         rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
