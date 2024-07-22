@@ -1,4 +1,3 @@
-@@ -1,103 +1,96 @@
 # Starter pipeline
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
@@ -81,12 +80,6 @@ steps:
               FROM rulepack
               WHERE id = '$rulepack_id';
             " -s"," -W)
-            # Verifica se a consulta retornou o valor específico
-            if [[ "$rulepack_result" == "----,-------------,------------,------,------------" ]]; then
-              echo "nenhuma rulepack para esse id: $rulepack_id"
-            else
-              echo "$rulepack_result"
-            fi
           fi
         done
       done
