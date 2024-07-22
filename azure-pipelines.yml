@@ -78,7 +78,7 @@ steps:
             rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
               SELECT name, versionNumber, rulepackType, locale, progLanguage
               FROM rulepack
-              WHERE id = '$rulepack_id';
+              WHERE id = $rulepack_id;
             " -s"," -W)
               
             echo "$rulepack_result"
