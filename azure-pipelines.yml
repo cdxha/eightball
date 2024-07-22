@@ -66,20 +66,6 @@ steps:
       DB_PASS="t3cn0l0gi4!"
       DB_NAME="sscdb"
 
-      # JSON de exemplo
-      response_body='{
-        "data": [
-          {
-            "issueInstanceId": "399A248E35AE0FBB04255DE45FA9754C",
-            "issueName": "J2EE Misconfiguration: Missing Error Handling",
-            "friority": "Low",
-            "primaryTag": null,
-            "primaryRuleGuid": "749BCC9F-FE61-4DC0-9EF2-5EF1872C7717",
-            "_href": "https://lab.devsecops.com:8443/ssc/api/v1/projectVersions/11003/issues/1611"
-          }
-        ]
-      }'
-
       # Processa o JSON e extrai os primaryRuleGuid
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
