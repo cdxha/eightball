@@ -80,6 +80,8 @@ steps:
               FROM rulepack
               WHERE id = '$rulepack_id';
             " -s"," -W)
+              
+              cho "$rulepack_result"
           fi
         done
       done
