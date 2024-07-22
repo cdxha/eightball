@@ -62,12 +62,12 @@ steps:
       for guid in $primaryRuleGuids; do
         echo "Consulta para Issue primaryRuleGuid: $guid"
         
-          # Executa a consulta SQL e armazena os IDs dos rulepacks em uma variável
+      # Executa a consulta SQL e armazena os IDs dos rulepacks em uma variável
       rulepack_ids=$(sqlcmd -S "$DB_SERVER" -U "$DB_USER" -P "$DB_PASS" -d "$DB_NAME" -Q "
         SELECT rulepack_id
         FROM ruledescription
         WHERE guid = '$guid'
-      " -s"," -W | tr -d '\r' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
+      " -s"," -W | tr -d '\r' | sed -e '1d; s/^,*//; s/,*$//' | grep -v '^$')
 
       echo "$rulepack_ids"
  
