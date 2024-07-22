@@ -89,7 +89,7 @@ steps:
               SELECT name, versionNumber, rulepackType, locale, progLanguage
               FROM rulepack
               WHERE id = '$rulepack_id';
-            " -s"," )
+            " -s"," -W )
             echo "$rulepack_result"           
           fi
         done
