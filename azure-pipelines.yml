@@ -76,8 +76,7 @@ steps:
           rulepack_ids=$(execute_sql_query "
               SELECT rulepack_id
               FROM ruledescription
-              WHERE guid = '$guid'
-          ")
+              WHERE guid = '$guid' ")
 
           # Check if rulepack_ids is not empty before processing
           if [ -n "$rulepack_ids" ]; then
@@ -90,8 +89,7 @@ steps:
                   rulepack_result=$(execute_sql_query "
                       SELECT name, versionNumber, rulepackType, locale, progLanguage
                       FROM rulepack
-                      WHERE id = $rulepack_id
-                  ")
+                      WHERE id = $rulepack_id ")
 
                   # Check if any rows were returned
                   if [ -n "$rulepack_result" ]; then
