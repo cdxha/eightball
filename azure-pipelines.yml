@@ -79,6 +79,6 @@ steps:
               rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
                   SELECT name, versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
-                  WHERE id = $rulepack_id; " -s"," -W | sed '1d; 2d' | grep -v '^$')
+                  WHERE id = $rulepack_id; " -s"," -W | sed '1d; | grep -v '^$')
           done
       done
