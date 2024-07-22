@@ -69,33 +69,4 @@ steps:
       # Processa o JSON e extrai os primaryRuleGuid
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
-      for guid in $primaryRuleGuids; do
-        echo "Consulta para primaryRuleGuid: $guid"
-
-        # Consulta 01: ruledescription
-        ruledescription_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
-          SELECT id, guid, rulepack_id
-          FROM ruledescription
-          WHERE guid = '$guid';
-        " -s"," -W)
-
-        echo "Resultado da Consulta 01:"
-        echo "$ruledescription_result"
-
-        # Extrai os rulepack_id dos resultados da Consulta 01
-        rulepack_ids=$(echo "$ruledescription_result" | awk 'NR>1 {print $3}')
-
-        for rulepack_id in $rulepack_ids; do
-          echo "Consulta para rulepack_id: $rulepack_id"
-
-          # Consulta 02: rulepack
-          rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
-            SELECT id, name, description, versionNumber, progLanguage, rulepackType, locale
-            FROM rulepack
-            WHERE id = '$rulepack_id';
-          " -s"," -W)
-
-          echo "Resultado da Consulta 02:"
-          echo "$rulepack_result"
-        done
-      done
+      echo $primaryRuleGuids
