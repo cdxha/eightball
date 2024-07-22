@@ -81,5 +81,10 @@ steps:
 
         echo "Resultado da consulta na tabela ruledescription:"
         echo "$ruledescription_result"
+        
+        ruledescription_result=$(echo "$ruledescription_result" | sed '/^$/d')
+
+        echo "Resultado da consulta na tabela ruledescription sanitizada:"
+        echo "$ruledescription_result"
 
       done
