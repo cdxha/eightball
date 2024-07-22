@@ -67,12 +67,9 @@ steps:
         SELECT rulepack_id
         FROM ruledescription
         WHERE guid = '$guid'
-      " -s"," -W | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
+      " -s"," -W | tr -d '\r' | grep -v '^,$' | tr -d ' ' | paste -s -d ',' - | sed 's/,$//')
 
-      # Remove possíveis vírgulas extras e linhas em branco da saída
-      rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
-      
-      echo $rulepack_ids
+      echo "$rulepack_ids"
 
       
       done
