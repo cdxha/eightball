@@ -62,7 +62,7 @@ steps:
 
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
-      DB_USER="fortify"
+      DB_USER="sa"
       DB_PASS="t3cn0l0gi4!"
       DB_NAME="sscdb"
 
