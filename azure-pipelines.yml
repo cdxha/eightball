@@ -74,9 +74,7 @@ steps:
 
           # Percorre o array de rulepack_ids
           for rulepack_id in "${rulepack_ids[@]}"
-          do
-              echo "ID do rulepack: $rulepack_id"
-              
+          do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
               rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
                   SELECT name, versionNumber, rulepackType, locale, progLanguage
