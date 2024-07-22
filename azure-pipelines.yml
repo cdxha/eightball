@@ -77,7 +77,6 @@ steps:
           do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
               rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
-                  SET NOCOUNT ON;
                   SELECT name, versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
                   WHERE id = $rulepack_id; " -s"," -W | sed '1d; 2d' | grep -v '^$')
