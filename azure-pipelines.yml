@@ -69,11 +69,8 @@ steps:
       # Processa o JSON e extrai os primaryRuleGuids
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
 
-      # Processa o JSON e extrai os issueInstanceIds
-      issueInstanceIds=$(echo "$response_body" | jq -r '.data[].issueInstanceId')
-
-      for guid in $issueInstanceIds; do
-        echo "Consulta para Issue : $guid"
+      for guid in $primaryRuleGuids; do
+        echo "Consulta para Issue primaryRuleGuid: $guid"
 
         # Consulta ao banco de dados para obter os rulepack_id
         rulepack_ids=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
@@ -82,18 +79,21 @@ steps:
           WHERE guid = '$guid'
         " -s"," -W -h-1 | tr -d '\r' | tr '\n' ',' | sed 's/,$//')
 
-        # Remover possíveis linhas em branco da saída
-        rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//')
+        # Remover possíveis linhas em branco da saída e vírgulas adicionais
+        rulepack_ids=$(echo "$rulepack_ids" | sed 's/^,//; s/,$//' | sed '/^$/d')
 
         # Converte a lista de IDs em um array Bash
         IFS=',' read -r -a rulepack_array <<< "$rulepack_ids"
 
-        # Itera sobre cada rulepack_id
+        # Itera sobre cada rulepack_id, ignorando entradas vazias
         for rulepack_id in "${rulepack_array[@]}"; do
-          # Aqui você pode colocar outra consulta ou qualquer outra lógica
-          echo "Rulepack ID: $rulepack_id"
+          if [[ -n "$rulepack_id" ]]; then
+            # Aqui você pode colocar outra consulta ou qualquer outra lógica
+            echo "Rulepack ID: $rulepack_id"
+          fi
         done
       done
+
 
 
            
