@@ -73,8 +73,7 @@ steps:
           " -s"," -W | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
 
           # Percorre o array de rulepack_ids
-          for rulepack_id in "${rulepack_ids[@]}"
-          do  
+          for rulepack_id in "${rulepack_ids[@]}"  
                 # Consulta ao banco de dados para obter informações detalhadas do rulepack
                 rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
                   SET NOCOUNT ON;
