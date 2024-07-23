@@ -81,7 +81,6 @@ steps:
                   FROM rulepack
                   WHERE id = $rulepack_id;
               " -s"," -W  2>/dev/null | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
-              echo "$rulepack_id"
               if [[ ! -z "${rulepack_result// }" ]]; then
                   
                  echo "$rulepack_result"
