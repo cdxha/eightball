@@ -83,7 +83,7 @@ steps:
               " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
 
               if [[ -z "${rulepack_result// }" ]]; then
-                echo "A variável está vazia ou contém apenas espaços em branco."
+                
               else
                 echo "A variável contém algum conteúdo." 
                 echo "$rulepack_result"
