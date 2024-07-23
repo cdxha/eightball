@@ -13,18 +13,18 @@ steps:
     targetType: 'inline'
     script: |
       #!/bin/bash
-
+      
       # Defini as variáveis
       fortify_url="https://lab.devsecops.com:8443/ssc/api/v1"
       fortify_token="YWE4ZDgwM2ItNDQ0Yy00ZDkwLWFkOTItZDc3YmEzM2IyYzk4"
       app_name="configuration"
       app_version="dev"
       rulepack_gate=""
-      issue_friotiy=""
-
+      issue_priority=""
+      
       # Defini os cabeçalhos
       headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
-
+      
       # Fazendo a requisição HTTP no endpoint que lista as aplicações
       response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3A${app_name}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
@@ -34,7 +34,7 @@ steps:
           exit 1
       fi
       app_id=$(echo "$response_body" | jq '.data[0].id')
-
+      
       # Fazendo a requisição HTTP no endpoint que lista as versões de aplicações
       response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0&q=name%3A${app_version}&fulltextsearch=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
@@ -44,7 +44,7 @@ steps:
           exit 1
       fi
       version_id=$(echo "$response_body" | jq '.data[0].id')
-
+      
       # Fazendo a requisição HTTP no endpoint que lista as issues da versão da aplicação
       response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false" "${headers[@]}")
       status_code=$(echo "$response" | tail -n1)
@@ -53,13 +53,13 @@ steps:
           echo "Erro na request /projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false return code $status_code"
           exit 1
       fi
-
+      
       # Configurações do banco de dados
       DB_SERVER="lab.devsecops.com,1435"
       DB_USER="sa"
       DB_PASS="t3cn0l0gi4!"
       DB_NAME="sscdb"
-
+      
       # Processa o JSON e extrai os primaryRuleGuids
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
       for guid in $primaryRuleGuids; do
@@ -71,22 +71,23 @@ steps:
               FROM ruledescription
               WHERE guid = '$guid'
           " -s"," -W | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
-
+      
           # Percorre o array de rulepack_ids
-          for rulepack_id in "${rulepack_ids[@]}"  
-                # Consulta ao banco de dados para obter informações detalhadas do rulepack
-                rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+          for rulepack_id in "${rulepack_ids[@]}"; do  
+              # Consulta ao banco de dados para obter informações detalhadas do rulepack
+              rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
                   SET NOCOUNT ON;
                   SELECT [name], versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
-                  WHERE id = $rulepack_id;" -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$'
-
-
-                # Verifica se houve resultados da consulta
-                if [ -n "$rulepack_result" ]; then
-                    echo "$rulepack_result"
-                else
-                 echo ""
-                fi
+                  WHERE id = $rulepack_id;
+              " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
+      
+              # Verifica se houve resultados da consulta
+              if [ -n "$rulepack_result" ]; then
+                  echo "$rulepack_result"
+              else
+                  echo ""
+              fi
           done
       done
+
