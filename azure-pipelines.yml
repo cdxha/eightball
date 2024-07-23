@@ -76,13 +76,19 @@ steps:
           for rulepack_id in "${rulepack_ids[@]}"; do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
               rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
-                  SET NOCOUNT ON;
-                  SELECT [name], versionNumber, rulepackType, locale, progLanguage
-                  FROM rulepack
-                  WHERE id = $rulepack_id;
-              " -s"," -W )
-                   
-              echo "$rulepack_result"
+                SET NOCOUNT ON;
+                SELECT [name], versionNumber, rulepackType, locale, progLanguage
+                FROM rulepack
+                WHERE id = $rulepack_id
+                AND [name] <> '----'
+                AND versionNumber <> '-------------'
+                AND rulepackType <> '------------'
+                AND locale <> '------'
+                AND progLanguage <> '------------';
+                " -s"," -W )
+
+                echo "$rulepack_result"
+
 
           done
       done
