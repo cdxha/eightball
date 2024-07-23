@@ -80,7 +80,7 @@ steps:
                   SELECT [name], versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
                   WHERE id = $rulepack_id;
-              " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
+              " -s"," -W  -m 1 | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
               echo "$rulepack_id"
               if [[ ! -z "${rulepack_result// }" ]]; then
                   
