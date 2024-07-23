@@ -15,8 +15,8 @@ steps:
       #!/bin/bash
       
       # Defini as variáveis
-      fortify_url="https://lab.devsecops.com:8443/ssc/api/v1"
-      fortify_token="YWE4ZDgwM2ItNDQ0Yy00ZDkwLWFkOTItZDc3YmEzM2IyYzk4"
+      fortify_url=$(FORTIFY_URL)
+      fortify_token=$(FORTIFY_TOKEN)
       app_name="configuration"
       app_version="dev"
       rulepack_gate=""
@@ -55,10 +55,10 @@ steps:
       fi
       
       # Configurações do banco de dados
-      DB_SERVER="lab.devsecops.com,1435"
-      DB_USER="sa"
-      DB_PASS="t3cn0l0gi4!"
-      DB_NAME="sscdb"
+      db_server=$(DB_SERVER)
+      db_user=$(DB_USER)
+      db_pass=$(DB_PASS)
+      db_name=$(DB_NAME)
       
       # Processa o JSON e extrai os primaryRuleGuids
       primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
@@ -66,7 +66,7 @@ steps:
           echo "Consulta para Issue primaryRuleGuid: $guid"
           
           # Consulta SQL para obter os rulepack_ids relacionados ao primaryRuleGuid
-          mapfile -t rulepack_ids < <(sqlcmd -S "$DB_SERVER" -U "$DB_USER" -P "$DB_PASS" -d "$DB_NAME" -Q "
+          mapfile -t rulepack_ids < <(sqlcmd -S "$db_server" -U "$db_user" -P "$db_pass" -d "$db_name" -Q "
               SELECT rulepack_id
               FROM ruledescription
               WHERE guid = '$guid'
@@ -75,7 +75,7 @@ steps:
           # Percorre o array de rulepack_ids
           for rulepack_id in "${rulepack_ids[@]}"; do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
-              rulepack_result=$(sqlcmd -S $DB_SERVER -U $DB_USER -P $DB_PASS -d $DB_NAME -Q "
+              rulepack_result=$(sqlcmd -S $db_server -U $db_user -P $db_pass -d $db_name -Q "
                   SET NOCOUNT ON;
                   SELECT [name], versionNumber, rulepackType, locale, progLanguage
                   FROM rulepack
