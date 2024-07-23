@@ -81,13 +81,9 @@ steps:
                   FROM rulepack
                   WHERE id = $rulepack_id;
               " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
-      
-              # Verifica se houve resultados da consulta
-              if [ -n "$rulepack_result" ]; then
-                  echo "$rulepack_result"
-              else
-                  echo ""
-              fi
+                   
+              echo "$rulepack_result"
+
           done
       done
 
