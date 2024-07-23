@@ -82,12 +82,9 @@ steps:
                   WHERE id = $rulepack_id;
               " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
 
-              if [[ -z "${rulepack_result// }" ]]; then
-                
-              else
-                echo "A variável contém algum conteúdo." 
+              if [[ ! -z "${rulepack_result// }" ]]; then
                 echo "$rulepack_result"
-              fi     
+              fi   
               
           done
       done
