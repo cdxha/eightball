@@ -71,7 +71,7 @@ steps:
               FROM ruledescription
               WHERE guid = '$guid'
           " -s"," -W | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
-          echo $rulepack_ids
+
           # Percorre o array de rulepack_ids
           for rulepack_id in "${rulepack_ids[@]}"; do  
               # Consulta ao banco de dados para obter informações detalhadas do rulepack
@@ -83,7 +83,8 @@ steps:
               " -s"," -W | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
 
               if [[ ! -z "${rulepack_result// }" ]]; then
-                echo "$rulepack_result"
+                 echo "$rulepack_id" 
+                 echo "$rulepack_result"
               fi   
               
           done
