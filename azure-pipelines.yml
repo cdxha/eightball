@@ -15,8 +15,8 @@ steps:
         #!/bin/bash
 
         # Defini as variáveis
-        fortify_url="$FORTIFY_URL"
-        fortify_token="$FORTIFY_TOKEN"
+        fortify_url=$FORTIFY_URL
+        fortify_token=$FORTIFY_TOKEN
         app_name="javaAnnotations"
         app_version="dev"
         rulepack_gate=""
