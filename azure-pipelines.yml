@@ -8,7 +8,7 @@ pool:
   name: lab.devsecops.com
 steps:
 - task: Bash@3
-  displayName: Fortify Rulepack Gate
+  displayName: Fortify Rulepack Diff
   inputs:
     targetType: 'inline'
     script: |
