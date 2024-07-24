@@ -13,24 +13,18 @@ steps:
     targetType: 'inline'
     script: |
         #!/bin/bash
-
+        
         # Defini as variáveis
-        fortify_url=$FORTIFY_URL
-        fortify_token=$FORTIFY_TOKEN
+        fortify_url=$(FORTIFY_URL)
+        fortify_token=$(FORTIFY_TOKEN)
         app_name="javaAnnotations"
         app_version="dev"
         rulepack_gate=""
         issue_priority=""
-
+        
         # Defini os cabeçalhos
         headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
-
-        # Função para executar consulta SQL e tratar o resultado
-        consulta_sql() {
-            sqlcmd -S "$db_server" -U "$db_user" -P "$db_pass" -d "$db_name" -Q "$1" -s"," -W 2>/dev/null | \
-            sed '1d; 2d' | tr -d '\r' | sed -e 's/^,*//; s/,*$//' | grep -v '^$'
-        }
-
+        
         # Fazendo a requisição HTTP no endpoint que lista as aplicações
         response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3A${app_name}&fulltextsearch=false" "${headers[@]}")
         status_code=$(echo "$response" | tail -n1)
@@ -40,7 +34,7 @@ steps:
             exit 1
         fi
         app_id=$(echo "$response_body" | jq '.data[0].id')
-
+        
         # Fazendo a requisição HTTP no endpoint que lista as versões de aplicações
         response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0&q=name%3A${app_version}&fulltextsearch=false" "${headers[@]}")
         status_code=$(echo "$response" | tail -n1)
@@ -50,7 +44,7 @@ steps:
             exit 1
         fi
         version_id=$(echo "$response_body" | jq '.data[0].id')
-
+        
         # Fazendo a requisição HTTP no endpoint que lista as issues da versão da aplicação
         response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false" "${headers[@]}")
         status_code=$(echo "$response" | tail -n1)
@@ -59,38 +53,39 @@ steps:
             echo "Erro na request /projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false return code $status_code"
             exit 1
         fi
-
+        
         # Configurações do banco de dados
-        db_server="$DB_SERVER"
-        db_user="$DB_USER"
-        db_pass="$DB_PASS"
-        db_name="$DB_NAME"
-
+        db_server=$(DB_SERVER)
+        db_user=$(DB_USER)
+        db_pass=$(DB_PASS)
+        db_name=$(DB_NAME)
+        
         # Processa o JSON e extrai os primaryRuleGuids
         primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
         for guid in $primaryRuleGuids; do
             echo "Consulta para Issue primaryRuleGuid: $guid"
-
+            
             # Consulta SQL para obter os rulepack_ids relacionados ao primaryRuleGuid
-            mapfile -t rulepack_ids < <(consulta_sql "
+            mapfile -t rulepack_ids < <(sqlcmd -S "$db_server" -U "$db_user" -P "$db_pass" -d "$db_name" -Q "
                 SELECT rulepack_id
                 FROM ruledescription
                 WHERE guid = '$guid'
-            ")
+            " -s"," -W 2>/dev/null | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
 
             # Percorre o array de rulepack_ids
             for rulepack_id in "${rulepack_ids[@]}"; do  
                 # Consulta ao banco de dados para obter informações detalhadas do rulepack
-                rulepack_result=$(consulta_sql "
+                rulepack_result=$(sqlcmd -S $db_server -U $db_user -P $db_pass -d $db_name -Q "
                     SET NOCOUNT ON;
                     SELECT [name], versionNumber, rulepackType, locale, progLanguage
                     FROM rulepack
                     WHERE id = $rulepack_id;
-                ")
+                " -s"," -W  2>/dev/null | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
                 if [[ ! -z "${rulepack_result// }" ]]; then
+                    
                     echo "$rulepack_result"
                 fi   
+                
             done
-
-            echo  # Adiciona uma linha em branco entre os blocos de consulta
-        done | sed '/Incorrect syntax near '"'"'rows'"'"'/d'
+            echo 
+        done | sed '/Incorrect syntax near '"'"'rows'"'"'/d' 
