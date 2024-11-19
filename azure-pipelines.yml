@@ -159,7 +159,7 @@ steps:
       targetType: 'inline'
       script: |
         export PATH=$PATH:$(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/bin/
-        scan_sast_job_token=$(scancentral -url $(fortify_sast_url) -ssctoken $(fortify_sast_token) start -bt none -upload --application $(Build.Repository.Name) --application-version $(Build.SourceBranchName) -uptoken $(fortify_sast_token))
+        scan_sast_job_token=$(scancentral -url $(fortify_sast_url) -ssctoken $(fortify_sast_token) start -upload --application $(Build.Repository.Name) --application-version $(Build.SourceBranchName) -uptoken $(fortify_sast_token))
         job_token=${scan_sast_job_token: -36}
         echo $scan_sast_job_token
         ls /root/.fortify/scancentral-24.4.0/log
