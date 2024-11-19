@@ -1,91 +1,219 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
 trigger:
 - main
-pool:
-  name: lab.devsecops.com
-steps:
-- task: Bash@3
-  displayName: Fortify Rulepack Diff
-  inputs:
-    targetType: 'inline'
-    script: |
-        #!/bin/bash
-        
-        # Defini as variáveis
-        fortify_url=$(FORTIFY_URL)
-        fortify_token=$(FORTIFY_TOKEN)
-        app_name="javaAnnotations"
-        app_version="dev"
-        rulepack_gate=""
-        issue_priority=""
-        
-        # Defini os cabeçalhos
-        headers=(-H "Accept: application/json" -H "Authorization: FortifyToken $fortify_token")
-        
-        # Fazendo a requisição HTTP no endpoint que lista as aplicações
-        response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects?start=0&limit=200&q=name%3A${app_name}&fulltextsearch=false" "${headers[@]}")
-        status_code=$(echo "$response" | tail -n1)
-        response_body=$(echo "$response" | sed '$d')
-        if [ "$status_code" -ne 200 ]; then
-            echo "Erro na request /projects?start=0&limit=200&q=name%3${app_name}&fulltextsearch=false return code $status_code"
-            exit 1
-        fi
-        app_id=$(echo "$response_body" | jq '.data[0].id')
-        
-        # Fazendo a requisição HTTP no endpoint que lista as versões de aplicações
-        response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projects/${app_id}/versions?start=0&limit=0&q=name%3A${app_version}&fulltextsearch=false" "${headers[@]}")
-        status_code=$(echo "$response" | tail -n1)
-        response_body=$(echo "$response" | sed '$d')
-        if [ "$status_code" -ne 200 ]; then
-            echo "Erro na request /projects/${app_id}/versions?start=0&limit=0 return code $status_code"
-            exit 1
-        fi
-        version_id=$(echo "$response_body" | jq '.data[0].id')
-        
-        # Fazendo a requisição HTTP no endpoint que lista as issues da versão da aplicação
-        response=$(curl -sS -k -w "\n%{http_code}" "${fortify_url}/projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false" "${headers[@]}")
-        status_code=$(echo "$response" | tail -n1)
-        response_body=$(echo "$response" | sed '$d')
-        if [ "$status_code" -ne 200 ]; then
-            echo "Erro na request /projectVersions/${version_id}/issues?start=0&limit=0&fields=issueName%2Cfriority%2CprimaryTag%2CissueInstanceId%2CprimaryRuleGuid&showhidden=false&showremoved=false&showsuppressed=false&showshortfilenames=false return code $status_code"
-            exit 1
-        fi
-        
-        # Configurações do banco de dados
-        db_server=$(DB_SERVER)
-        db_user=$(DB_USER)
-        db_pass=$(DB_PASS)
-        db_name=$(DB_NAME)
-        
-        # Processa o JSON e extrai os primaryRuleGuids
-        primaryRuleGuids=$(echo "$response_body" | jq -r '.data[].primaryRuleGuid')
-        for guid in $primaryRuleGuids; do
-            echo "Consulta para Issue primaryRuleGuid: $guid"
-            
-            # Consulta SQL para obter os rulepack_ids relacionados ao primaryRuleGuid
-            mapfile -t rulepack_ids < <(sqlcmd -S "$db_server" -U "$db_user" -P "$db_pass" -d "$db_name" -Q "
-                SELECT rulepack_id
-                FROM ruledescription
-                WHERE guid = '$guid'
-            " -s"," -W 2>/dev/null | tr -d '\r' | sed '1d; 2d' | sed -e 's/^,*//; s/,*$//' | grep -v '^$')
 
-            # Percorre o array de rulepack_ids
-            for rulepack_id in "${rulepack_ids[@]}"; do  
-                # Consulta ao banco de dados para obter informações detalhadas do rulepack
-                rulepack_result=$(sqlcmd -S $db_server -U $db_user -P $db_pass -d $db_name -Q "
-                    SET NOCOUNT ON;
-                    SELECT [name], versionNumber, rulepackType, locale, progLanguage
-                    FROM rulepack
-                    WHERE id = $rulepack_id;
-                " -s"," -W  2>/dev/null | sed '1d' | grep -v '^----,-------------,------------,------,------------$')
-                if [[ ! -z "${rulepack_result// }" ]]; then
-                    
-                    echo "$rulepack_result"
-                fi   
-                
-            done
-            echo 
-        done | sed '/Incorrect syntax near '"'"'rows'"'"'/d' 
+pool:
+  name: gke-cluster
+  
+variables:
+  - group: 'Fortify'
+
+steps:
+
+  - task: Bash@3
+    displayName: Configure Fortify Environment
+    inputs:
+      targetType: 'inline'
+      script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/fortify
+        mkdir -p $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64
+
+  - task: Bash@3
+    displayName: 'Download JDK17/Fcli'
+    inputs:
+      targetType: 'inline'
+      script: |
+        curl -L -O "https://download.oracle.com/java/17/archive/jdk-17_linux-x64_bin.tar.gz"
+        ls -l | grep jdk-17_linux-x64_bin.tar.gz
+        curl -L -O "https://github.com/fortify/fcli/releases/download/v2.9.1/fcli.jar"
+        ls -l | grep fcli.jar
+        pwd
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+
+  - task: JavaToolInstaller@0
+    displayName: 'Install JDK17'
+    inputs:
+      versionSpec: '17'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'LocalDirectory'
+      jdkFile: '$(System.DefaultWorkingDirectory)/fortify/jdk-17_linux-x64_bin.tar.gz'
+      jdkDestinationDirectory: '$(Agent.ToolsDirectory)/jdk'
+      cleanDestinationDirectory: true
+
+  - task: Bash@3
+    displayName: 'Check Version'
+    inputs:
+      targetType: 'inline'
+      script: |
+        java --version
+        java -jar fcli.jar --version
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+
+  - task: UniversalPackages@0
+    displayName: 'Download FortifyClient'
+    inputs:
+      command: 'download'
+      downloadDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+      feedsToUse: 'internal'
+      vstsFeed: 'e212d98a-2eb1-4ab9-8bd2-5ccb29ee8ab9'
+      vstsFeedPackage: 'b6a933f7-c595-4827-9332-37c689f3da1e'
+      vstsPackageVersion: '24.4.0'
+
+  - script: |
+      echo "Conteúdo do diretório:"
+      ls -l $(System.DefaultWorkingDirectory)/fortify
+      pwd
+    displayName: 'Listar conteúdo do diretório'
+
+  - task: Bash@3
+    displayName: 'Configure FortifyClient'
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Passo 1: Descompactar o arquivo ZIP
+        echo "Descompactando o arquivo ZIP..."
+        unzip Fortify_ScanCentral_Client_24.4.0_x64.zip -d $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64
+        if [ $? -ne 0 ]; then
+            echo "Erro: Falha ao descompactar o arquivo ZIP."
+            exit 1
+        else
+            echo "Arquivo descompactado com sucesso."
+        fi
+        ls $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64
+        
+        # Passo 2: Tornar arquivos executáveis
+        echo "Tornando os arquivos no diretório 'bin/' executáveis..."
+        chmod +x $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/bin/*
+        if [ $? -ne 0 ]; then
+            echo "Erro: Falha ao tornar os arquivos executáveis."
+            exit 1
+        else
+            echo "Arquivos tornados executáveis com sucesso."
+        fi
+        ls $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/bin
+        
+        # Passo 3: Substituir a chave no arquivo 'client.properties'
+        echo "Substituindo o token de autenticação no arquivo 'client.properties'..."
+        if [ -z "$(fortify_scancentral_client_auth_token)" ]; then
+            echo "Erro: A variável 'fortify_scancentral_client_auth_token' não está definida."
+            exit 1
+        fi
+        
+        sed -i "s/client_auth_token=/client_auth_token=$(fortify_scancentral_client_auth_token)/" $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/Core/config/client.properties
+        if [ $? -ne 0 ]; then
+            echo "Erro: Falha ao substituir o token no arquivo 'client.properties'."
+            exit 1
+        else
+            echo "Token de autenticação substituído com sucesso no arquivo 'client.properties'."
+        fi
+        
+        # Passo 4: Exibir o conteúdo do arquivo 'client.properties' para verificação
+        echo "Conteúdo do arquivo 'client.properties':"
+        cat $(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/Core/config/client.properties
+        if [ $? -ne 0 ]; then
+            echo "Erro: Não foi possível exibir o conteúdo do arquivo 'client.properties'."
+            exit 1
+        else
+            echo "Exibição do arquivo 'client.properties' concluída com sucesso."
+        fi
+        
+        # Passo 5: Adicionar o diretório 'bin/' ao PATH
+        echo "Adicionando o diretório 'bin/' ao PATH..."
+        export PATH=$PATH:$(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/bin/
+        if [ $? -ne 0 ]; then
+            echo "Erro: Falha ao adicionar o diretório 'bin/' ao PATH."
+            exit 1
+        else
+            echo "Diretório 'bin/' adicionado ao PATH com sucesso."
+        fi
+        
+        # Passo 6: Verificar a versão do ScanCentral
+        echo "Verificando a versão do ScanCentral..."
+        scancentral --version
+        if [ $? -ne 0 ]; then
+            echo "Erro: Falha ao executar o comando 'scancentral --version'."
+            exit 1
+        else
+            echo "Comando 'scancentral --version' executado com sucesso."
+        fi
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+
+  - task: Bash@3
+    displayName: 'Login to SSC and Create Application'
+    inputs:
+      targetType: 'inline'
+      script: |
+        java -jar fcli.jar ssc session login --session=$(Build.BuildId) --url=$(fortify_ssc_url) --token=$(fortify_ssc_token) --output=json --insecure --log-level=INFO
+        java -jar fcli.jar ssc appversion create $(Build.Repository.Name):$(Build.SourceBranchName) --active=true --description="Initial version of myApp" --auto-required-attrs --issue-template="Prioritized High Risk Issue Template" --skip-if-exists --session=$(Build.BuildId) --output=json --log-level=INFO
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+
+  - task: Bash@3
+    displayName: 'Get Application Version Details'
+    inputs:
+      targetType: 'inline'
+      script: 'java -jar fcli.jar ssc appversion get $(Build.Repository.Name):$(Build.SourceBranchName) --session $(Build.BuildId)'
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
+  
+  - task: Bash@3
+    displayName: 'Start Scan SAST'
+    inputs:
+      targetType: 'inline'
+      script: |
+        export PATH=$PATH:$(System.DefaultWorkingDirectory)/fortify/Fortify_ScanCentral_Client_24.4.0_x64/bin/
+        scan_sast_job_token=$(scancentral -url $(fortify_sast_url) -ssctoken $(fortify_sast_token) start -bt none -upload --application $(Build.Repository.Name) --application-version $(Build.SourceBranchName) -uptoken $(fortify_sast_token))
+        job_token=${scan_sast_job_token: -36}
+        echo $scan_sast_job_token
+        ls /root/.fortify/scancentral-24.4.0/log
+        cat /root/.fortify/scancentral-24.4.0/log/scancentral.log
+      workingDirectory: '$(Build.SourcesDirectory)'
+
+  # - task: Bash@3
+  #   displayName: 'Start SAST Scan'
+  #   inputs:
+  #     targetType: 'inline'
+  #     script: |
+  #       java -jar fcli.jar ssc 
+  
+  # - task: Bash@3
+  #   displayName: 'Show Results'
+  #   inputs:
+  #     targetType: 'inline'
+  #     script: |
+  #       java -jar fcli.jar ssc issue count --appversion $(Build.Repository.Name):$(Build.SourceBranchName) --filter 'Analysis Type:WebInspect' --session ::session::name
+  #       java -jar fcli.jar ssc issue list --appversion $(Build.Repository.Name):$(Build.SourceBranchName) --filter 'Analysis Type:WebInspect' --session ::session::name
+
+  # - task: Bash@3
+  #   displayName: 'Login to DAST and Start DAST Scan'
+  #   inputs:
+  #     targetType: 'inline'
+  #     script: |
+  #       java -jar fcli.jar sc-dast session login --session $(Build.BuildId) --ssc-url $(fortify_ssc_url) --ssc-ci-token $(fortify_ssc_token) --insecure --store=session:name      
+  #       java -jar fcli.jar sc-dast sensor list --session ::session::name
+  #       java -jar fcli.jar sc-dast scan start --name $(Build.Repository.Name):$(Build.SourceBranchName) -s 34de7741-9b5b-4fb5-b32d-425b230760d6 --session ::session::name --store=scan:id 
+  #       java -jar fcli.jar sc-dast scan get ::scan::id --session ::session::name 
+  #       java -jar fcli.jar sc-dast scan wait-for ::scan::id --on-failure-state=fail --on-timeout=fail --on-unknown-state=fail --progress=simple --timeout=30m --store=scanResult:status,state,completionTime --session ::session::name
+
+  # - task: Bash@3
+  #   displayName: 'Publish and Show Results'
+  #   inputs:
+  #     targetType: 'inline'
+  #     script: |
+  #       java -jar fcli.jar sc-dast scan publish ::scan::id --session ::session::name
+  #       java -jar fcli.jar ssc session login --session teste --url $(fortify_ssc_url) --token $(fortify_ssc_token) --insecure --store=session:name
+  #       java -jar fcli.jar ssc issue count --appversion $(Build.Repository.Name):$(Build.SourceBranchName) --filter 'Analysis Type:WebInspect' --session ::session::name
+  #       java -jar fcli.jar ssc issue list --appversion $(Build.Repository.Name):$(Build.SourceBranchName) --filter 'Analysis Type:WebInspect' --session ::session::name
+
+  # - task: Bash@3
+  #   displayName: 'Retrieve DAST Scan History'
+  #   inputs:
+  #     targetType: 'inline'
+  #     script: 'java -jar fcli.jar sc-dast scan list  --server-queries searchText=$(Build.Repository.Name):$(Build.SourceBranchName) --session $(Build.BuildId)'
+
+  - task: Bash@3
+    displayName: 'End Sessions and Clear Variables'
+    inputs:
+      targetType: 'inline'
+      script: |
+        # java -jar fcli.jar sc-dast session logout --session ::session::name
+        java -jar fcli.jar ssc session logout --session $(Build.BuildId) --no-revoke-token
+        java -jar fcli.jar util variable clear
+      workingDirectory: '$(System.DefaultWorkingDirectory)/fortify'
